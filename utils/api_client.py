@@ -3,12 +3,11 @@ import requests
 
 class APIClient:
     def __init__(self):
-        # Using a specialized, stable automated testing mirror API
         self.base_url = "https://reqres.in/api"
         self.session = requests.Session()
+        # Keep it clean so standard payload formatting works automatically
         self.session.headers.update({
-            "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Accept": "application/json"
         })
 
     def get_products(self):
