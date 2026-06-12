@@ -29,7 +29,7 @@ class APIClient:
         for key in self._api_key_candidates:
             self.session.headers["x-api-key"] = key
             response = self.session.request(method, f"{self.base_url}{path}", **kwargs)
-            if response.status_code != 401:
+            if response.status_code not in (401, 403):
                 return response
         return response
 
