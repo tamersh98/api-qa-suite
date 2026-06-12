@@ -1,4 +1,4 @@
-# utils/api_client.py
+import os
 import requests
 
 class APIClient:
@@ -7,7 +7,9 @@ class APIClient:
         self.session = requests.Session()
         # Keep it clean so standard payload formatting works automatically
         self.session.headers.update({
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "x-api-key": os.getenv("REQRES_API_KEY", "reqres-free-v1")
         })
 
     def get_products(self):
