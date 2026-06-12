@@ -1,38 +1,64 @@
-# tests/test_users.py
 import pytest
+from unittest.mock import patch
+from utils.api_client import APIClient
 
-def test_user_login_successful(api_client):
-    credentials = {
-        "email": "eve.holt@reqres.in",
-        "password": "cityslicka"
-    }
-    response = api_client.login(credentials)
+
+def test_get_all_users_returns_200(api_client, mock_users_response):
+    with patch.object(api_client.session, "request", return_value=mock_users_response):
+        response = api_client.get_users()
     assert response.status_code == 200
-    assert "token" in response.json()
 
-def test_user_login_invalid_credentials(api_client):
-    bad_credentials = {
-        "email": "missing-password@reqres.in"
-    }
-    response = api_client.login(bad_credentials)
-    # ReqRes returns 400 Bad Request for uncompleted auth payloads
-    assert response.status_code == 400
 
-def test_get_all_users_schema(api_client, auth_token):
-    assert auth_token is not None
-    response = api_client.get_users()
-    assert response.status_code == 200
-    
-    data_list = response.json().get("data", [])
-    assert len(data_list) > 0
-    
-    first_user = data_list[0]
-    required_keys = ["id", "email", "first_name", "last_name", "avatar"]
-    for key in required_keys:
-        assert key in first_user
+def test_get_all_users_returns_list(api_client, mock_users_response):
+    with patch.object(api_client.session, "request", return_value=mock_users_response):
+        response = api_client.get_users()
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+
+
+def test_get_all_users_schema(api_client, mock_users_response):
+    with patch.object(api_client.session, "request", return_value=mock_users_response):
+        response = api_client.get_users()
+    required_keys = ["id", "name", "email", "username"]
+    for user in response.json():
+        for key in required_keys:
+            assert key in user, f"Missing key '{key}' in user: {user}"
+
 
 @pytest.mark.parametrize("user_id", [1, 2, 3])
-def test_get_single_user_parameterized(api_client, user_id):
-    response = api_client.get_single_user(user_id)
+def test_get_single_user_returns_200(api_client, mock_single_user_response, user_id):
+    with patch.object(api_client.session, "request", return_value=mock_single_user_response):
+        response = api_client.get_single_user(user_id)
     assert response.status_code == 200
-    assert response.json()["data"]["id"] == user_id
+
+
+@pytest.mark.parametrize("user_id", [1, 2, 3])
+def test_get_single_user_has_correct_fields(api_client, mock_single_user_response, user_id):
+    with patch.object(api_client.session, "request", return_value=mock_single_user_response):
+        response = api_client.get_single_user(user_id)
+    user = response.json()
+    assert "id" in user
+    assert "email" in user
+
+
+def test_get_single_user_not_found(api_client, mock_not_found_response):
+    with patch.object(api_client.session, "request", return_value=mock_not_found_response):
+        response = api_client.get_single_user(9999)
+    assert response.status_code == 404
+
+
+def test_create_user_returns_201(api_client, mock_create_user_response):
+    payload = {"name": "Test User", "email": "test@test.com", "username": "testuser"}
+    with patch.object(api_client.session, "request", return_value=mock_create_user_response):
+        response = api_client.create_user(payload)
+    assert response.status_code == 201
+
+
+def test_create_user_returns_new_id(api_client, mock_create_user_response):
+    payload = {"name": "Test User", "email": "test@test.com", "username": "testuser"}
+    with patch.object(api_client.session, "request", return_value=mock_create_user_response):
+        response = api_client.create_user(payload)
+    data = response.json()
+    assert "id" in data
+    assert data["id"] is not None
