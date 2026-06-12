@@ -33,3 +33,25 @@ def test_api_client_retries_with_fallback_key_after_401(monkeypatch):
 
     assert response.status_code == 200
     assert used_keys == ["bad-key", "reqres-free-v1"]
+
+
+def test_api_client_retries_with_fallback_key_after_403(monkeypatch):
+    monkeypatch.setenv("REQRES_API_KEY", "bad-key")
+    client = APIClient()
+
+    class Response:
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    responses = [Response(403), Response(200)]
+    used_keys = []
+
+    def fake_request(method, url, **kwargs):
+        used_keys.append(client.session.headers["x-api-key"])
+        return responses.pop(0)
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    response = client.get_products()
+
+    assert response.status_code == 200
+    assert used_keys == ["bad-key", "reqres-free-v1"]
