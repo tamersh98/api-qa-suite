@@ -1,35 +1,69 @@
+import pytest
+from unittest.mock import patch, MagicMock
 from utils.api_client import APIClient
 
 
-def test_api_client_sets_default_reqres_api_key_header(monkeypatch):
-    monkeypatch.delenv("REQRES_API_KEY", raising=False)
+def test_api_client_uses_default_base_url(monkeypatch):
+    monkeypatch.delenv("API_BASE_URL", raising=False)
     client = APIClient()
-    assert client.session.headers["x-api-key"] == "reqres-free-v1"
+    assert client.base_url == "https://jsonplaceholder.typicode.com"
 
 
-def test_api_client_uses_env_reqres_api_key_header(monkeypatch):
-    monkeypatch.setenv("REQRES_API_KEY", "custom-key")
+def test_api_client_uses_env_base_url(monkeypatch):
+    monkeypatch.setenv("API_BASE_URL", "https://my-mock-server.local")
     client = APIClient()
-    assert client.session.headers["x-api-key"] == "custom-key"
+    assert client.base_url == "https://my-mock-server.local"
 
 
-def test_api_client_retries_with_fallback_key_after_401(monkeypatch):
-    monkeypatch.setenv("REQRES_API_KEY", "bad-key")
+def test_api_client_uses_constructor_base_url():
+    client = APIClient(base_url="https://custom.api.local")
+    assert client.base_url == "https://custom.api.local"
+
+
+def test_api_client_sets_json_headers():
     client = APIClient()
+    assert client.session.headers["Accept"] == "application/json"
+    assert client.session.headers["Content-Type"] == "application/json"
 
-    class Response:
-        def __init__(self, status_code):
-            self.status_code = status_code
 
-    responses = [Response(401), Response(200)]
-    used_keys = []
+def test_get_users_calls_correct_endpoint(monkeypatch):
+    client = APIClient()
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
 
-    def fake_request(method, url, **kwargs):
-        used_keys.append(client.session.headers["x-api-key"])
-        return responses.pop(0)
+    with patch.object(client.session, "request", return_value=mock_resp) as mock_req:
+        client.get_users()
+        mock_req.assert_called_once_with("GET", "https://jsonplaceholder.typicode.com/users")
 
-    monkeypatch.setattr(client.session, "request", fake_request)
-    response = client.get_products()
 
-    assert response.status_code == 200
-    assert used_keys == ["bad-key", "reqres-free-v1"]
+def test_get_single_user_calls_correct_endpoint():
+    client = APIClient()
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+
+    with patch.object(client.session, "request", return_value=mock_resp) as mock_req:
+        client.get_single_user(42)
+        mock_req.assert_called_once_with("GET", "https://jsonplaceholder.typicode.com/users/42")
+
+
+def test_create_user_sends_post_with_payload():
+    client = APIClient()
+    mock_resp = MagicMock()
+    mock_resp.status_code = 201
+    payload = {"name": "Alice", "email": "alice@example.com"}
+
+    with patch.object(client.session, "request", return_value=mock_resp) as mock_req:
+        client.create_user(payload)
+        mock_req.assert_called_once_with(
+            "POST", "https://jsonplaceholder.typicode.com/users", json=payload
+        )
+
+
+def test_get_products_calls_correct_endpoint():
+    client = APIClient()
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+
+    with patch.object(client.session, "request", return_value=mock_resp) as mock_req:
+        client.get_products()
+        mock_req.assert_called_once_with("GET", "https://jsonplaceholder.typicode.com/posts")
