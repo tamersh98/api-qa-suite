@@ -12,9 +12,9 @@ def make_response(status_code, json_data):
 
 
 MOCK_USERS = [
-    {"id": 1, "name": "Leanne Graham", "email": "sincere@april.biz", "username": "Bret"},
-    {"id": 2, "name": "Ervin Howell",  "email": "shanna@melissa.tv", "username": "Antonette"},
-    {"id": 3, "name": "Clementine Bauch", "email": "nathan@yesenia.net", "username": "Samantha"},
+    {"id": 1, "name": "Leanne Graham", "email": "sincere@april.biz", "username": "Bret", "phone": "1-770-736-8031"},
+    {"id": 2, "name": "Ervin Howell",  "email": "shanna@melissa.tv", "username": "Antonette", "phone": "010-692-6593"},
+    {"id": 3, "name": "Clementine Bauch", "email": "nathan@yesenia.net", "username": "Samantha", "phone": "1-463-123-4447"},
 ]
 
 MOCK_POSTS = [

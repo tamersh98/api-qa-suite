@@ -62,3 +62,8 @@ def test_create_user_returns_new_id(api_client, mock_create_user_response):
     data = response.json()
     assert "id" in data
     assert data["id"] is not None
+
+def test_user_has_phone_field(api_client, mock_single_user_response):
+    with patch.object(api_client.session, "request", return_value=mock_single_user_response):
+        response = api_client.get_single_user(1)
+    assert "phone" in response.json()
